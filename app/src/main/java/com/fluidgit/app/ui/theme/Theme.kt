@@ -41,6 +41,7 @@ fun FluidGitTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
+        typography = Typography,
         content = content
     )
 }
