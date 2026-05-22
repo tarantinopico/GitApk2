@@ -11,6 +11,7 @@ import com.fluidgit.app.domain.model.GitResult
 import com.fluidgit.app.domain.repository.RepoRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.firstOrNull
 import org.eclipse.jgit.lib.PersonIdent
 import java.io.File
 import java.util.Date
@@ -24,8 +25,14 @@ class RepoRepositoryImpl @Inject constructor(
     private val repoDao: RepoDao,
     private val branchDao: BranchDao,
     private val commitDao: CommitDao,
-    private val gitManager: GitManager
+    private val gitManager: GitManager,
+    private val settingsRepository: com.fluidgit.app.domain.repository.SettingsRepository
 ) : RepoRepository {
+
+    private suspend fun getCredentialsProvider(): org.eclipse.jgit.transport.CredentialsProvider? {
+        val token = settingsRepository.githubToken.firstOrNull() ?: return null
+        return org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider(token, "")
+    }
 
     override fun getAllRepos(): Flow<List<RepoEntity>> = repoDao.getAllRepos()
     
@@ -38,7 +45,7 @@ class RepoRepositoryImpl @Inject constructor(
         val cloneResult = gitManager.clone(
             uri = url,
             directory = file,
-            credentials = null, // In reality, we'd fetch these
+            credentials = getCredentialsProvider(),
             branch = null,
             depth = null,
             progress = null
@@ -53,6 +60,8 @@ class RepoRepositoryImpl @Inject constructor(
                     localPath = localPath,
                     currentBranch = "main", // Will be updated by status refresh
                     uncommittedChangesCount = 0,
+                    aheadCount = 0,
+                    behindCount = 0,
                     lastUpdated = Date()
                 )
             )
@@ -132,7 +141,26 @@ class RepoRepositoryImpl @Inject constructor(
     }
 
     override suspend fun commit(repoId: String, message: String): GitResult<Unit> {
-        // Simplified
-        return GitResult.Success(Unit)
+        val repo = repoDao.getRepoByIdSync(repoId) ?: return GitResult.Error(Exception("Repo not found"))
+        val file = File(repo.localPath)
+        val openResult = gitManager.open(file)
+        if (openResult is GitResult.Success) {
+            val git = openResult.data
+            // Simplified author handling
+            val author = PersonIdent("Fluid Git User", "user@fluidgit.app")
+            
+            // Add all files
+            git.add().addFilepattern(".").call()
+            
+            // Commit
+            val commitResult = gitManager.commit(git, message, author, false)
+            if (commitResult is GitResult.Success) {
+                refreshRepoStatus(repoId)
+                return GitResult.Success(Unit)
+            } else if (commitResult is GitResult.Error) {
+                return GitResult.Error(commitResult.exception)
+            }
+        }
+        return GitResult.Error(Exception("Failed to commit"))
     }
 }

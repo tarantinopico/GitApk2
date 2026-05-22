@@ -42,4 +42,12 @@ class RepoDetailViewModel(
             }
         }
     }
+
+    fun commit(message: String) {
+        viewModelScope.launch {
+            gitUseCases.commit(repoId, message)
+            gitUseCases.refreshRepo(repoId)
+            loadBranches()
+        }
+    }
 }

@@ -35,4 +35,8 @@ class GitUseCases(
     suspend fun refreshRepo(repoId: String): GitResult<Unit> {
         return repoRepository.refreshRepoStatus(repoId)
     }
+
+    suspend fun commit(repoId: String, message: String): GitResult<Unit> {
+        return repoRepository.commit(repoId, message)
+    }
 }

@@ -41,7 +41,7 @@ class AppContainer(private val applicationContext: Context) {
     }
 
     val repoRepository: RepoRepository by lazy {
-        RepoRepositoryImpl(database.repoDao(), database.branchDao(), database.commitDao(), gitManager)
+        RepoRepositoryImpl(database.repoDao(), database.branchDao(), database.commitDao(), gitManager, settingsRepository)
     }
 
     val gitUseCases: GitUseCases by lazy {

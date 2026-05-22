@@ -3,6 +3,7 @@ package com.fluidgit.app.domain.repository
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.edit
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -17,11 +18,13 @@ class SettingsRepository @Inject constructor(
     private val THEME_AMOLED = booleanPreferencesKey("theme_amoled")
     private val BIOMETRIC_LOCK = booleanPreferencesKey("biometric_lock")
     private val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
+    private val GITHUB_TOKEN = stringPreferencesKey("github_token")
 
     val isLiquidLight: Flow<Boolean> = dataStore.data.map { it[THEME_LIQUID_LIGHT] ?: false }
     val isAmoled: Flow<Boolean> = dataStore.data.map { it[THEME_AMOLED] ?: false }
     val isBiometricLockEnabled: Flow<Boolean> = dataStore.data.map { it[BIOMETRIC_LOCK] ?: false }
     val isOnboardingCompleted: Flow<Boolean> = dataStore.data.map { it[ONBOARDING_COMPLETED] ?: false }
+    val githubToken: Flow<String?> = dataStore.data.map { it[GITHUB_TOKEN] }
 
     suspend fun setLiquidLight(enabled: Boolean) {
         dataStore.edit { it[THEME_LIQUID_LIGHT] = enabled }
@@ -37,5 +40,15 @@ class SettingsRepository @Inject constructor(
     
     suspend fun setOnboardingCompleted(completed: Boolean) {
         dataStore.edit { it[ONBOARDING_COMPLETED] = completed }
+    }
+    
+    suspend fun setGithubToken(token: String?) {
+        dataStore.edit { 
+            if (token == null) {
+                it.remove(GITHUB_TOKEN)
+            } else {
+                it[GITHUB_TOKEN] = token
+            }
+        }
     }
 }

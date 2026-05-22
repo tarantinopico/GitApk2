@@ -93,6 +93,16 @@ dependencies {
   // Moshi
   implementation(libs.moshi.kotlin)
 
+  // Networking
+  implementation(libs.retrofit)
+  implementation(libs.converter.moshi)
+
+  // Image loading
+  implementation(libs.coil.compose)
+
+  // Web Browser
+  implementation("androidx.browser:browser:1.8.0")
+
   // Hilt
   implementation(libs.hilt.android)
   "ksp"(libs.hilt.compiler)

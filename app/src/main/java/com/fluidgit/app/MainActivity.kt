@@ -5,6 +5,8 @@ import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -81,12 +83,27 @@ import androidx.compose.ui.res.stringResource
 import com.fluidgit.app.R
 
 class MainActivity : FragmentActivity() {
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        val app = application as FluidGitApplication
+        val settingsRepository = app.container.settingsRepository
+        val authHandler = AuthHandler(settingsRepository, this.lifecycleScope)
+        authHandler.handleAuthIntent(intent.data)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
+        
+        val app = application as FluidGitApplication
+        val settingsRepository = app.container.settingsRepository
+        val authHandler = AuthHandler(settingsRepository, this.lifecycleScope)
+        authHandler.handleAuthIntent(intent.data)
+
         setContent {
             val globalViewModel: GlobalViewModel = androidx.lifecycle.viewmodel.compose.viewModel(factory = AppViewModelProvider)
             val themeState by globalViewModel.themeState.collectAsState()
+            val githubToken by settingsRepository.githubToken.collectAsState(initial = null)
             var isUnlocked by remember { mutableStateOf(false) }
 
             LaunchedEffect(themeState.isBiometricLockEnabled, themeState.isOnboardingCompleted) {
@@ -123,6 +140,14 @@ class MainActivity : FragmentActivity() {
                 if (!themeState.isOnboardingCompleted) {
                     com.fluidgit.app.ui.screens.onboarding.OnboardingScreen(
                         onFinish = { globalViewModel.setOnboardingCompleted(true) }
+                    )
+                } else if (githubToken == null) {
+                    com.fluidgit.app.ui.screens.login.LoginScreen(
+                        onLoginSuccess = { token ->
+                            this@MainActivity.lifecycleScope.launch {
+                                settingsRepository.setGithubToken(token)
+                            }
+                        }
                     )
                 } else if (isUnlocked) {
                     ImmersiveFluidGitScreen()

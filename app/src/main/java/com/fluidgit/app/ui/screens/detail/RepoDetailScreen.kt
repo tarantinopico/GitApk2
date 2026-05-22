@@ -164,6 +164,34 @@ fun RepoDetailScreen(
                 Text("Rebase Interactively", color = Slate100)
             }
             Spacer(modifier = Modifier.height(16.dp))
+            var commitMessage by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
+            androidx.compose.material3.OutlinedTextField(
+                value = commitMessage,
+                onValueChange = { commitMessage = it },
+                label = { Text("Commit Message", color = Slate400) },
+                modifier = Modifier.fillMaxWidth(),
+                colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Slate100,
+                    unfocusedTextColor = Slate100,
+                    focusedBorderColor = Cyan400,
+                    unfocusedBorderColor = Slate600
+                )
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Button(
+                onClick = {
+                    if (commitMessage.isNotBlank()) {
+                        viewModel.commit(commitMessage)
+                        commitMessage = ""
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Cyan500),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Commit All Changes", color = Slate100, fontWeight = FontWeight.Bold)
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            
             if (uiState.isLoading) {
                 Text(text = "Loading branches...", color = Slate100)
             } else {
