@@ -8,6 +8,7 @@ class FluidGitApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        com.fluidgit.app.util.GlobalErrorHandler.initialize()
         container = AppContainer(this)
     }
 }

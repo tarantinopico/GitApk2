@@ -1,3 +1,15 @@
 <resources>
-    <string name="app_name">My Application</string>
+    <string name="app_name">Fluid Git</string>
+    <string name="welcome_to_fluid_git">Welcome to Fluid Git</string>
+    <string name="blame_history">Blame &amp; History</string>
+    <string name="secure_private">Secure &amp; Private</string>
+    <string name="next">Next</string>
+    <string name="get_started">Get Started</string>
+    <string name="unlock_view">Unlock to view</string>
+    <string name="fluid_git_client">FLUIDGIT CLIENT</string>
+    <string name="fluid_engine_core">fluid-engine-core</string>
+    <string name="home">Home</string>
+    <string name="activity">Activity</string>
+    <string name="files">Files</string>
+    <string name="settings">Settings</string>
 </resources>

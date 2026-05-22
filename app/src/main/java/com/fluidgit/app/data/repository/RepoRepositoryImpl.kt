@@ -65,19 +65,18 @@ class RepoRepositoryImpl @Inject constructor(
         val file = File(localPath)
         val openResult = gitManager.open(file)
         if (openResult is GitResult.Success) {
-            openResult.data.use {
-                val repoId = UUID.randomUUID().toString()
-                repoDao.insertRepo(
-                    RepoEntity(
-                        id = repoId,
-                        name = file.name,
-                        localPath = localPath,
-                        currentBranch = it.repository.branch,
-                        uncommittedChangesCount = 0,
-                        lastUpdated = Date()
-                    )
+            val git = openResult.data
+            val repoId = UUID.randomUUID().toString()
+            repoDao.insertRepo(
+                RepoEntity(
+                    id = repoId,
+                    name = file.name,
+                    localPath = localPath,
+                    currentBranch = git.repository.branch,
+                    uncommittedChangesCount = 0,
+                    lastUpdated = Date()
                 )
-            }
+            )
             return GitResult.Success(Unit)
         } else {
             return GitResult.Error(Exception("Not a valid Git repository"))

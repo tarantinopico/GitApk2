@@ -1,6 +1,6 @@
 {
-  "name": "",
-  "description": "",
+  "name": "Fluid Git",
+  "description": "The most beautiful Git client for Android. Swipe via Radial Menu to navigate seamlessly.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

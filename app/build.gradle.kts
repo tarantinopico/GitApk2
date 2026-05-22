@@ -101,6 +101,14 @@ dependencies {
   implementation(libs.jgit)
   implementation(libs.jgit.ssh.jsch)
 
+  // Glance
+  implementation("androidx.glance:glance-appwidget:1.1.0")
+  implementation("androidx.glance:glance-material3:1.1.0")
+
+  // Bouncy Castle (for GPG)
+  implementation("org.bouncycastle:bcpg-jdk18on:1.78.1")
+  implementation("org.bouncycastle:bcprov-jdk18on:1.78.1")
+
   testImplementation(libs.androidx.compose.ui.test.junit4)
   testImplementation(libs.androidx.core)
   testImplementation(libs.androidx.junit)

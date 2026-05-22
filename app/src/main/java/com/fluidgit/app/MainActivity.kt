@@ -1,8 +1,10 @@
 package com.fluidgit.app
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
+import androidx.biometric.BiometricPrompt
+import androidx.core.content.ContextCompat
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -68,25 +70,67 @@ import com.fluidgit.app.ui.theme.Slate400
 import com.fluidgit.app.ui.theme.Slate500
 import com.fluidgit.app.ui.theme.Slate600
 import com.fluidgit.app.ui.theme.Slate700
-
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.compose.ui.res.stringResource
+import com.fluidgit.app.R
 
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         setContent {
             val globalViewModel: GlobalViewModel = androidx.lifecycle.viewmodel.compose.viewModel(factory = AppViewModelProvider)
             val themeState by globalViewModel.themeState.collectAsState()
+            var isUnlocked by remember { mutableStateOf(false) }
+
+            LaunchedEffect(themeState.isBiometricLockEnabled, themeState.isOnboardingCompleted) {
+                if (!themeState.isOnboardingCompleted) {
+                    isUnlocked = true // Don't require biometrics during onboarding
+                    return@LaunchedEffect
+                }
+                
+                if (themeState.isBiometricLockEnabled) {
+                    val executor = ContextCompat.getMainExecutor(this@MainActivity)
+                    val biometricPrompt = BiometricPrompt(this@MainActivity, executor,
+                        object : BiometricPrompt.AuthenticationCallback() {
+                            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                                isUnlocked = true
+                            }
+                            override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                            }
+                        })
+                    val promptInfo = BiometricPrompt.PromptInfo.Builder()
+                        .setTitle("Unlock Fluid Git")
+                        .setSubtitle("Confirm identity to access secure repositories")
+                        .setNegativeButtonText("Cancel")
+                        .build()
+                    biometricPrompt.authenticate(promptInfo)
+                } else {
+                    isUnlocked = true
+                }
+            }
 
             FluidGitTheme(
                 isLiquidLight = themeState.isLiquidLight,
                 isAmoled = themeState.isAmoled
             ) {
-                ImmersiveFluidGitScreen()
+                if (!themeState.isOnboardingCompleted) {
+                    com.fluidgit.app.ui.screens.onboarding.OnboardingScreen(
+                        onFinish = { globalViewModel.setOnboardingCompleted(true) }
+                    )
+                } else if (isUnlocked) {
+                    ImmersiveFluidGitScreen()
+                } else {
+                    Box(modifier = Modifier.fillMaxSize().background(Background)) {
+                        Text("Unlock to view", color = Slate400, modifier = Modifier.align(Alignment.Center))
+                    }
+                }
             }
         }
     }
@@ -180,7 +224,7 @@ fun TopAppBar() {
     ) {
         Column {
             Text(
-                text = "FLUIDGIT CLIENT",
+                text = stringResource(R.string.fluid_git_client),
                 color = Cyan400,
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,
@@ -188,7 +232,7 @@ fun TopAppBar() {
                 modifier = Modifier.alpha(0.8f)
             )
             Text(
-                text = "fluid-engine-core",
+                text = stringResource(R.string.fluid_engine_core),
                 color = Slate100,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.SemiBold,

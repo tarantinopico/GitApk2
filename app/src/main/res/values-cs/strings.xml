@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">Fluid Git</string>
+    <string name="welcome_to_fluid_git">Vítejte ve Fluid Git</string>
+    <string name="blame_history">Blame a Historie</string>
+    <string name="secure_private">Bezpečné a Soukromé</string>
+    <string name="next">Další</string>
+    <string name="get_started">Začít</string>
+    <string name="unlock_view">Odemknout pro zobrazení</string>
+    <string name="fluid_git_client">FLUIDGIT KLIENT</string>
+    <string name="fluid_engine_core">fluid-jádro</string>
+    <string name="home">Domů</string>
+    <string name="activity">Aktivita</string>
+    <string name="files">Soubory</string>
+    <string name="settings">Nastavení</string>
+</resources>

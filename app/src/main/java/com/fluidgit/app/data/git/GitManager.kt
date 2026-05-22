@@ -30,10 +30,19 @@ import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
+import android.util.LruCache
+import java.util.concurrent.ConcurrentHashMap
+
 @Singleton
 class GitManager @Inject constructor(
     private val sshSessionFactory: CustomSshSessionFactory
 ) {
+    private val gitCache = object : LruCache<String, Git>(5) {
+        override fun entryRemoved(evicted: Boolean, key: String?, oldValue: Git?, newValue: Git?) {
+            oldValue?.close()
+        }
+    }
+
     private inline fun <T> runGitOperation(block: () -> T): GitResult<T> {
         return try {
             GitResult.Success(block())
@@ -94,7 +103,10 @@ class GitManager @Inject constructor(
 
     suspend fun open(directory: File): GitResult<Git> = withContext(Dispatchers.IO) {
         runGitOperation {
-            Git.open(directory)
+            val path = directory.absolutePath
+            gitCache.get(path) ?: synchronized(gitCache) {
+                gitCache.get(path) ?: Git.open(directory).also { gitCache.put(path, it) }
+            }
         }
     }
 
@@ -228,6 +240,34 @@ class GitManager @Inject constructor(
             val cmd = repo.diff()
             // In a real implementation we would setup TreeWalkers.
             emptyList<DiffEntryUi>() // Simplified for structure
+        }
+    }
+
+    suspend fun reset(repo: Git, mode: org.eclipse.jgit.api.ResetCommand.ResetType, ref: String): GitResult<Ref> = withContext(Dispatchers.IO) {
+        runGitOperation {
+            repo.reset().setMode(mode).setRef(ref).call()
+        }
+    }
+
+    suspend fun clean(repo: Git, directories: Boolean, force: Boolean): GitResult<Set<String>> = withContext(Dispatchers.IO) {
+        runGitOperation {
+            repo.clean().setCleanDirectories(directories).setForce(force).call()
+        }
+    }
+
+    suspend fun revert(repo: Git, commit: String): GitResult<RevCommit> = withContext(Dispatchers.IO) {
+        runGitOperation {
+            val revCommit = repo.repository.resolve(commit)
+            repo.revert().include(revCommit).call()
+        }
+    }
+
+    suspend fun archive(repo: Git, outFile: File, format: String, treeish: String): GitResult<Unit> = withContext(Dispatchers.IO) {
+        runGitOperation {
+            java.io.FileOutputStream(outFile).use { out ->
+                repo.archive().setFormat(format).setTree(repo.repository.resolve(treeish)).setOutputStream(out).call()
+                Unit
+            }
         }
     }
 

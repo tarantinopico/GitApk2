@@ -8,27 +8,36 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class ThemeState(
     val isLiquidLight: Boolean = false,
     val isAmoled: Boolean = false,
-    val isBiometricLockEnabled: Boolean = false
+    val isBiometricLockEnabled: Boolean = false,
+    val isOnboardingCompleted: Boolean = true // default true to avoid flashing
 )
 
 class GlobalViewModel(
-    settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
     val themeState: StateFlow<ThemeState> = combine(
         settingsRepository.isLiquidLight,
         settingsRepository.isAmoled,
-        settingsRepository.isBiometricLockEnabled
-    ) { light, amoled, biometric ->
-        ThemeState(light, amoled, biometric)
+        settingsRepository.isBiometricLockEnabled,
+        settingsRepository.isOnboardingCompleted
+    ) { light, amoled, biometric, onboarding ->
+        ThemeState(light, amoled, biometric, onboarding)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = ThemeState()
     )
+    
+    fun setOnboardingCompleted(completed: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setOnboardingCompleted(completed)
+        }
+    }
 }
