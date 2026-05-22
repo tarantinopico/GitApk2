@@ -69,11 +69,23 @@ import com.fluidgit.app.ui.theme.Slate500
 import com.fluidgit.app.ui.theme.Slate600
 import com.fluidgit.app.ui.theme.Slate700
 
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         setContent {
-            FluidGitTheme {
+            val globalViewModel: GlobalViewModel = androidx.lifecycle.viewmodel.compose.viewModel(factory = AppViewModelProvider)
+            val themeState by globalViewModel.themeState.collectAsState()
+
+            FluidGitTheme(
+                isLiquidLight = themeState.isLiquidLight,
+                isAmoled = themeState.isAmoled
+            ) {
                 ImmersiveFluidGitScreen()
             }
         }
@@ -130,18 +142,22 @@ fun ImmersiveFluidGitScreen() {
                 items = listOf(
                     com.fluidgit.app.ui.components.RadialMenuItem(
                         icon = Icons.Rounded.Home,
+                        label = "Home",
                         onClick = { navController.navigate(com.fluidgit.app.ui.navigation.Destinations.REPOS) }
                     ),
                     com.fluidgit.app.ui.components.RadialMenuItem(
                         icon = Icons.Rounded.DateRange,
+                        label = "Activity",
                         onClick = { navController.navigate(com.fluidgit.app.ui.navigation.Destinations.ACTIVITY) }
                     ),
                     com.fluidgit.app.ui.components.RadialMenuItem(
                         icon = Icons.Rounded.Share,
+                        label = "Files",
                         onClick = { navController.navigate(com.fluidgit.app.ui.navigation.Destinations.FILE_MANAGER) }
                     ),
                     com.fluidgit.app.ui.components.RadialMenuItem(
                         icon = Icons.Rounded.Settings,
+                        label = "Settings",
                         onClick = { navController.navigate(com.fluidgit.app.ui.navigation.Destinations.SETTINGS) }
                     )
                 ),

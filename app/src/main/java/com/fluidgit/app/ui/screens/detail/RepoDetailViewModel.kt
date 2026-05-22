@@ -21,8 +21,7 @@ data class RepoDetailUiState(
     val error: String? = null
 )
 
-@HiltViewModel
-class RepoDetailViewModel @Inject constructor(
+class RepoDetailViewModel(
     savedStateHandle: SavedStateHandle,
     private val gitUseCases: GitUseCases
 ) : ViewModel() {

@@ -17,13 +17,19 @@ import java.util.Date
 import java.util.UUID
 import javax.inject.Inject
 
+import com.fluidgit.app.data.local.db.CommitDao
+import com.fluidgit.app.data.local.db.CommitEntity
+
 class RepoRepositoryImpl @Inject constructor(
     private val repoDao: RepoDao,
     private val branchDao: BranchDao,
+    private val commitDao: CommitDao,
     private val gitManager: GitManager
 ) : RepoRepository {
 
     override fun getAllRepos(): Flow<List<RepoEntity>> = repoDao.getAllRepos()
+    
+    override fun getAllRecentCommits(): Flow<List<CommitEntity>> = commitDao.getAllCommits()
 
     override fun getRepoById(id: String): Flow<RepoEntity?> = repoDao.getRepoById(id)
 
@@ -79,8 +85,35 @@ class RepoRepositoryImpl @Inject constructor(
     }
 
     override suspend fun refreshRepoStatus(id: String): GitResult<Unit> {
-        // Find repo, open git, get status, update DB
-        return GitResult.Success(Unit) // Simplified
+        val repo = repoDao.getRepoByIdSync(id) ?: return GitResult.Error(Exception("Repo not found"))
+        val file = File(repo.localPath)
+        if (!file.exists()) return GitResult.Error(Exception("Path not found"))
+        val gitResult = gitManager.open(file)
+        if (gitResult is GitResult.Success) {
+            val git = gitResult.data
+            val statusResult = gitManager.status(git)
+            val trackingStatusResult = gitManager.getTrackingStatus(git)
+            if (statusResult is GitResult.Success) {
+                val status = statusResult.data
+                val uncommittedCount = status.uncommittedChanges.size
+                var ahead = 0
+                var behind = 0
+                if (trackingStatusResult is GitResult.Success && trackingStatusResult.data != null) {
+                    ahead = trackingStatusResult.data.aheadCount
+                    behind = trackingStatusResult.data.behindCount
+                }
+                repoDao.updateRepo(
+                    repo.copy(
+                        uncommittedChangesCount = uncommittedCount,
+                        aheadCount = ahead,
+                        behindCount = behind,
+                        lastUpdated = Date()
+                    )
+                )
+                return GitResult.Success(Unit)
+            }
+        }
+        return GitResult.Error(Exception("Failed to get status"))
     }
 
     override suspend fun deleteRepo(id: String): GitResult<Unit> {

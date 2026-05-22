@@ -7,10 +7,14 @@ import com.fluidgit.app.domain.repository.RepoRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
-class GitUseCases @Inject constructor(
+import com.fluidgit.app.data.local.db.CommitEntity
+
+class GitUseCases(
     private val repoRepository: RepoRepository
 ) {
     fun getAllRepos(): Flow<List<RepoEntity>> = repoRepository.getAllRepos()
+    
+    fun getAllRecentCommits(): Flow<List<CommitEntity>> = repoRepository.getAllRecentCommits()
     
     suspend fun cloneRepository(url: String, localPath: String): GitResult<Unit> {
         return repoRepository.cloneRepo(url, localPath)

@@ -13,6 +13,8 @@ data class RepoEntity(
     val localPath: String,
     val currentBranch: String?,
     val uncommittedChangesCount: Int = 0,
+    val aheadCount: Int = 0,
+    val behindCount: Int = 0,
     val lastUpdated: Date
 )
 

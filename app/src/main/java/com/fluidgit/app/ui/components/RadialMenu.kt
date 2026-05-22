@@ -34,9 +34,14 @@ import com.fluidgit.app.ui.theme.Cyan400
 import com.fluidgit.app.ui.theme.Cyan500
 import kotlin.math.cos
 import kotlin.math.sin
+import androidx.compose.ui.unit.sp
+
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Text
 
 data class RadialMenuItem(
     val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val label: String,
     val onClick: () -> Unit
 )
 
@@ -47,10 +52,11 @@ fun RadialMenu(
     mainIcon: androidx.compose.ui.graphics.vector.ImageVector = Icons.Rounded.Add
 ) {
     var isExpanded by remember { mutableStateOf(false) }
+    var selectedIndex by remember { mutableStateOf(-1) }
     val haptic = LocalHapticFeedback.current
 
     val mainRotation by animateFloatAsState(
-        targetValue = if (isExpanded) 45f else 0f,
+        targetValue = if (isExpanded) 135f else 0f,
         animationSpec = spring(stiffness = 300f, dampingRatio = 0.5f),
         label = "main_rotation"
     )
@@ -58,22 +64,24 @@ fun RadialMenu(
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
         items.forEachIndexed { index, item ->
             val angle = Math.PI + (Math.PI / (items.size - 1)) * index
-            val radius = 100f // roughly 100dp depending on density but we'll use dp
-            val targetX = if (isExpanded) (cos(angle) * 250f).toInt() else 0
-            val targetY = if (isExpanded) (sin(angle) * 250f).toInt() else 0
+            // If selected, suck into center (radius 0)
+            val suckIn = selectedIndex != -1 && selectedIndex != index
+            val radius = if (isExpanded && selectedIndex == -1) 250f else 0f
+            val targetX = (cos(angle) * radius).toInt()
+            val targetY = (sin(angle) * radius).toInt()
             
             val animX by animateFloatAsState(
                 targetValue = targetX.toFloat(),
-                animationSpec = spring(stiffness = 200f, dampingRatio = 0.6f),
+                animationSpec = spring(stiffness = 200f, dampingRatio = if (selectedIndex != -1) 0.9f else 0.6f),
                 label = "x_$index"
             )
             val animY by animateFloatAsState(
                 targetValue = targetY.toFloat(),
-                animationSpec = spring(stiffness = 200f, dampingRatio = 0.6f),
+                animationSpec = spring(stiffness = 200f, dampingRatio = if (selectedIndex != -1) 0.9f else 0.6f),
                 label = "y_$index"
             )
             val animAlpha by animateFloatAsState(
-                targetValue = if (isExpanded) 1f else 0f,
+                targetValue = if (isExpanded && (selectedIndex == -1 || selectedIndex == index)) 1f else 0f,
                 animationSpec = spring(stiffness = 200f),
                 label = "alpha_$index"
             )
@@ -83,7 +91,6 @@ fun RadialMenu(
                     modifier = Modifier
                         .offset { IntOffset(animX.toInt(), animY.toInt()) }
                         .alpha(animAlpha)
-                        .size(48.dp)
                         .clip(CircleShape)
                         .background(Color.White.copy(alpha = 0.1f))
                         .border(1.dp, Color.White.copy(alpha = 0.2f), CircleShape)
@@ -92,18 +99,25 @@ fun RadialMenu(
                             indication = null,
                             onClick = {
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                isExpanded = false
+                                selectedIndex = index
+                                // Delay the actual onClick to allow suck-in animation to finish
                                 item.onClick()
                             }
-                        ),
-                    contentAlignment = Alignment.Center
+                        )
+                        .padding(12.dp)
                 ) {
-                    Icon(
-                        imageVector = item.icon,
-                        contentDescription = "Menu Item",
-                        tint = Cyan400,
-                        modifier = Modifier.size(24.dp)
-                    )
+                    androidx.compose.foundation.layout.Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = item.icon,
+                            contentDescription = item.label,
+                            tint = Cyan400,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        if (item.label.isNotEmpty()) {
+                            androidx.compose.foundation.layout.Spacer(modifier = Modifier.width(8.dp))
+                            Text(text = item.label, color = Cyan400, fontSize = 12.sp)
+                        }
+                    }
                 }
             }
         }
@@ -123,7 +137,13 @@ fun RadialMenu(
                     indication = null,
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        isExpanded = !isExpanded
+                        if (isExpanded) {
+                            selectedIndex = -1
+                            isExpanded = false
+                        } else {
+                            selectedIndex = -1
+                            isExpanded = true
+                        }
                     }
                 ),
             contentAlignment = Alignment.Center

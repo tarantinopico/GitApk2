@@ -15,8 +15,14 @@ interface RepoDao {
     @Query("SELECT * FROM repos WHERE id = :id")
     fun getRepoById(id: String): Flow<RepoEntity?>
 
+    @Query("SELECT * FROM repos WHERE id = :id")
+    suspend fun getRepoByIdSync(id: String): RepoEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertRepo(repo: RepoEntity)
+
+    @androidx.room.Update
+    suspend fun updateRepo(repo: RepoEntity)
 
     @Query("DELETE FROM repos WHERE id = :id")
     suspend fun deleteRepoById(id: String)
@@ -48,6 +54,9 @@ interface RemoteDao {
 
 @Dao
 interface CommitDao {
+    @Query("SELECT * FROM commits ORDER BY timestamp DESC")
+    fun getAllCommits(): Flow<List<CommitEntity>>
+
     @Query("SELECT * FROM commits WHERE repoId = :repoId ORDER BY timestamp DESC")
     fun getCommitsForRepo(repoId: String): Flow<List<CommitEntity>>
 

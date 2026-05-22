@@ -19,7 +19,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,7 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.fluidgit.app.data.local.db.RepoEntity
 import com.fluidgit.app.ui.components.FluidCard
 import com.fluidgit.app.ui.components.ShimmerLoading
@@ -36,19 +39,39 @@ import com.fluidgit.app.ui.theme.Cyan500
 import com.fluidgit.app.ui.theme.Slate100
 import com.fluidgit.app.ui.theme.Slate400
 import com.fluidgit.app.ui.theme.Slate600
+import com.fluidgit.app.AppViewModelProvider
 
 @Composable
 fun ReposScreen(
     onNavigateToDetail: (String) -> Unit,
-    viewModel: ReposViewModel = hiltViewModel()
+    viewModel: ReposViewModel = viewModel(factory = AppViewModelProvider)
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var searchQuery by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
+    val filteredRepos = uiState.repos.filter { it.name.contains(searchQuery, ignoreCase = true) }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(top = 24.dp) // Leave space for top bar if any
     ) {
+        androidx.compose.material3.OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            placeholder = { Text("Search repositories...", color = Slate400) },
+            leadingIcon = { androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Rounded.Search, contentDescription = "Search", tint = Cyan400) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Cyan500,
+                unfocusedBorderColor = Slate600,
+                focusedTextColor = Slate100,
+                unfocusedTextColor = Slate100
+            ),
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
+        )
+
         if (uiState.isLoading) {
             LazyColumn(
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
@@ -70,7 +93,7 @@ fun ReposScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
-                items(uiState.repos, key = { it.id }) { repo ->
+                items(filteredRepos, key = { it.id }) { repo ->
                     RepoItem(
                         repo = repo,
                         onClick = { onNavigateToDetail(repo.id) }
@@ -133,12 +156,31 @@ fun RepoItem(
                 }
             }
 
-            // Status Indicator dots can go here
-            Box(
-                modifier = Modifier
-                    .size(12.dp)
-                    .background(Slate600, CircleShape)
-            )
+            // Status Indicator (ahead/behind counts)
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                if (repo.aheadCount > 0 || repo.behindCount > 0) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        if (repo.aheadCount > 0) {
+                            Text("↑${repo.aheadCount}", color = Cyan500, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                        if (repo.behindCount > 0) {
+                            Text("↓${repo.behindCount}", color = com.fluidgit.app.ui.theme.HotMagenta, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+                if (repo.uncommittedChangesCount > 0) {
+                    Text("${repo.uncommittedChangesCount} uncommitted", color = com.fluidgit.app.ui.theme.HotMagenta, fontSize = 12.sp)
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .background(Cyan400, CircleShape)
+                    )
+                }
+            }
         }
     }
 }

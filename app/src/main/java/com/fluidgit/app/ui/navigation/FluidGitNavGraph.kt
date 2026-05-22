@@ -37,26 +37,32 @@ fun FluidGitNavGraph(
         enterTransition = {
             slideInHorizontally(
                 initialOffsetX = { it },
-                animationSpec = tween(500)
-            ) + scaleIn(initialScale = 0.9f, animationSpec = tween(500))
+                animationSpec = androidx.compose.animation.core.spring(
+                    dampingRatio = 0.6f,
+                    stiffness = 300f
+                )
+            ) + scaleIn(
+                initialScale = 0.9f, 
+                animationSpec = tween(400)
+            )
         },
         exitTransition = {
             slideOutHorizontally(
                 targetOffsetX = { -it / 2 },
-                animationSpec = tween(500)
-            ) + fadeOut(animationSpec = tween(500))
+                animationSpec = tween(400)
+            ) + fadeOut(animationSpec = tween(400))
         },
         popEnterTransition = {
             slideInHorizontally(
                 initialOffsetX = { -it / 2 },
-                animationSpec = tween(500)
+                animationSpec = tween(400)
             )
         },
         popExitTransition = {
             slideOutHorizontally(
                 targetOffsetX = { it },
-                animationSpec = tween(500)
-            ) + fadeOut(animationSpec = tween(500))
+                animationSpec = tween(400)
+            ) + fadeOut(animationSpec = tween(400))
         }
     ) {
         composable(Destinations.REPOS) {
@@ -74,10 +80,10 @@ fun FluidGitNavGraph(
             com.fluidgit.app.ui.screens.detail.RepoDetailScreen(repoId = repoId)
         }
         composable(Destinations.SETTINGS) {
-            com.fluidgit.app.ui.screens.SettingsScreen()
+            com.fluidgit.app.ui.screens.settings.SettingsScreen()
         }
         composable(Destinations.ACTIVITY) {
-            com.fluidgit.app.ui.screens.ActivityFeedScreen()
+            com.fluidgit.app.ui.screens.activity.ActivityFeedScreen()
         }
         composable(Destinations.FILE_MANAGER) {
             com.fluidgit.app.ui.screens.FileManagerScreen()

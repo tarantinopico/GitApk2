@@ -104,6 +104,17 @@ class GitManager @Inject constructor(
         }
     }
 
+    suspend fun getTrackingStatus(repo: Git): GitResult<org.eclipse.jgit.lib.BranchTrackingStatus?> = withContext(Dispatchers.IO) {
+        runGitOperation {
+            val branch = repo.repository.fullBranch
+            if (branch != null) {
+                org.eclipse.jgit.lib.BranchTrackingStatus.of(repo.repository, branch)
+            } else {
+                null
+            }
+        }
+    }
+
     suspend fun add(repo: Git, filePatterns: List<String>): GitResult<Unit> = withContext(Dispatchers.IO) {
         runGitOperation {
             val addCmd = repo.add()

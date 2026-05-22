@@ -11,20 +11,50 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
+import androidx.compose.material3.lightColorScheme
+
 private val DarkColorScheme = darkColorScheme(
     background = Background,
-    surface = Background,
-    primary = Cyan500,
-    secondary = Indigo500,
-    onBackground = Slate100,
-    onSurface = Slate100
+    surface = SurfaceElevated,
+    primary = CyanNeon,
+    secondary = HotMagenta,
+    error = ErrorNeon,
+    onBackground = TextPrimary,
+    onSurface = TextPrimary
+)
+
+private val AmoledColorScheme = darkColorScheme(
+    background = Color.Black,
+    surface = Color(0xFF0F0F0F),
+    primary = CyanNeon,
+    secondary = HotMagenta,
+    error = ErrorNeon,
+    onBackground = TextPrimary,
+    onSurface = TextPrimary
+)
+
+private val LightColorScheme = lightColorScheme(
+    background = Slate100, // White variant
+    surface = Color.White,
+    primary = CyanNeon,
+    secondary = HotMagenta,
+    error = ErrorNeon,
+    onBackground = Background, // Dark void text
+    onSurface = Background
 )
 
 @Composable
 fun FluidGitTheme(
+    isLiquidLight: Boolean = false,
+    isAmoled: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = DarkColorScheme
+    val colorScheme = when {
+        isLiquidLight -> LightColorScheme
+        isAmoled -> AmoledColorScheme
+        else -> DarkColorScheme
+    }
+
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {

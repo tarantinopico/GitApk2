@@ -19,8 +19,7 @@ data class ReposUiState(
     val error: String? = null
 )
 
-@HiltViewModel
-class ReposViewModel @Inject constructor(
+class ReposViewModel(
     private val gitUseCases: GitUseCases
 ) : ViewModel() {
 
